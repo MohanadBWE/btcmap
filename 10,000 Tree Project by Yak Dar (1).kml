@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>10,000 Tree Project by Yak Dar</name>
+    <description/>
+    <NetworkLink>
+      <name>10,000 Tree Project by Yak Dar</name>
+      <Link>
+        <href><![CDATA[https://www.google.com/maps/d/kml?forcekml=1&mid=1X5YglO1swRLDH5rUgZkFXbsGp1zh1f8]]></href>
+      </Link>
+    </NetworkLink>
+  </Document>
+</kml>
