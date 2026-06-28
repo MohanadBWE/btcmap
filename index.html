@@ -11,35 +11,34 @@ print("Starting Data Processing...")
 # 1. PROCESS LOGISTICS INVENTORY (Enter & Leave.xlsx)
 # ==========================================
 try:
-df_logistics = pd.read_excel('(Project) Enter & Leave.xlsx', skiprows=3)
-df_logistics.columns = df_logistics.columns.str.strip()
-df_logistics['number'] = pd.to_numeric(df_logistics['number'], errors='coerce').fillna(0)
+    df_logistics = pd.read_excel('(Project) Enter & Leave.xlsx', skiprows=3)
+    df_logistics.columns = df_logistics.columns.str.strip()
+    df_logistics['number'] = pd.to_numeric(df_logistics['number'], errors='coerce').fillna(0)
 
-species_translation = {
-'dar zaiton': 'Olive', 'dar hjir': 'Fig', 'dar hnar': 'Pomegranate',
-'dar sabahbah': 'Neem Tree', 'dar khox': 'Peach', 'dar sev': 'Apple',
-'dar tee': 'Berry', 'dar tre': 'Grapes', 'dar narnj': 'Sour Orange',
-'dar bioke': 'Quince', 'dar prtaqal': 'Orange', 'dar kaj': 'Pine tree',
-'dar fstaq': 'Pistachio', 'dar albizya': 'Albizya'
-}
+    species_translation = {
+        'dar zaiton': 'Olive', 'dar hjir': 'Fig', 'dar hnar': 'Pomegranate',
+        'dar sabahbah': 'Neem Tree', 'dar khox': 'Peach', 'dar sev': 'Apple',
+        'dar tee': 'Berry', 'dar tre': 'Grapes', 'dar narnj': 'Sour Orange',
+        'dar bioke': 'Quince', 'dar prtaqal': 'Orange', 'dar kaj': 'Pine tree',
+        'dar fstaq': 'Pistachio', 'dar albizya': 'Albizya'
+    }
 
-def translate_species(name):
-if pd.isna(name): return None
-name_str = str(name).strip().lower()
-if name_str == 'nan' or name_str == '': return None
-return species_translation.get(name_str, name_str.title())
+    def translate_species(name):
+        if pd.isna(name): return None
+        name_str = str(name).strip().lower()
+        if name_str == 'nan' or name_str == '': return None
+        return species_translation.get(name_str, name_str.title())
 
-df_logistics['Species_English'] = df_logistics['Materials'].apply(translate_species)
-valid_inventory = df_logistics.dropna(subset=['Species_English'])
-
-# Force Total to exactly 9,226 per your instructions
-total_trees_logistics = 9226
-species_stats_logistics =
-valid_inventory.groupby('Species_English')['number'].sum().sort_values(ascending=False).to_dict()
+    df_logistics['Species_English'] = df_logistics['Materials'].apply(translate_species)
+    valid_inventory = df_logistics.dropna(subset=['Species_English'])
+    
+    # Force Total to exactly 9,226 per your instructions
+    total_trees_logistics = 9226 
+    species_stats_logistics = valid_inventory.groupby('Species_English')['number'].sum().sort_values(ascending=False).to_dict()
 except Exception as e:
-print(f"Warning: Could not process inventory file. {e}")
-total_trees_logistics = 9226
-species_stats_logistics = {}
+    print(f"Warning: Could not process inventory file. {e}")
+    total_trees_logistics = 9226
+    species_stats_logistics = {}
 
 # ==========================================
 # 2. PROCESS GEOSPATIAL REGISTRY (Excel)
@@ -49,12 +48,12 @@ df_geo = pd.read_excel('fully_combined_data (1).xlsx')
 
 # Clean Team Leaders
 def clean_and_translate_leader(name):
-if pd.isna(name): return None
-name_str = str(name)
-if 'هاجان' in name_str: return 'Hajan Yusuf Salih'
-elif 'وارهيل' in name_str: return 'Warhel Rajab Mustafa'
-elif 'منتهى' in name_str: return 'Muntaha Hameed Abdullah'
-return name_str
+    if pd.isna(name): return None
+    name_str = str(name)
+    if 'هاجان' in name_str: return 'Hajan Yusuf Salih'
+    elif 'وارهيل' in name_str: return 'Warhel Rajab Mustafa'
+    elif 'منتهى' in name_str: return 'Muntaha Hameed Abdullah'
+    return name_str
 
 leader_col = 'Team Leader' if 'Team Leader' in df_geo.columns else 'Team Leader name'
 df_geo['Leader_Clean'] = df_geo[leader_col].apply(clean_and_translate_leader)
@@ -62,21 +61,21 @@ df_geo['Leader_Clean'] = df_geo[leader_col].apply(clean_and_translate_leader)
 # Format Phone Numbers
 phone_col = 'Phone Number' if 'Phone Number' in df_geo.columns else 'phone number'
 def format_phone(phone):
-if pd.isna(phone): return "Not Provided"
-if isinstance(phone, float): return str(int(phone))
-return str(phone).strip()
+    if pd.isna(phone): return "Not Provided"
+    if isinstance(phone, float): return str(int(phone))
+    return str(phone).strip()
 df_geo['Phone_Clean'] = df_geo.get(phone_col, pd.Series(["Not Provided"] * len(df_geo))).apply(format_phone)
 
 # Extract Tree Species
 tree_type_cols = [col for col in df_geo.columns if col.startswith('Type of tree/')]
 def get_row_species(row):
-species_list = []
-for col in tree_type_cols:
-if pd.notna(row[col]) and pd.to_numeric(row[col], errors='coerce') > 0:
-raw_name = col.replace('Type of tree/', '')
-clean_name = re.split(r'[\(\u0600-\u06FF]', raw_name)[0].strip()
-if clean_name: species_list.append(clean_name.title())
-return ", ".join(species_list) if species_list else "Mixed/Other"
+    species_list = []
+    for col in tree_type_cols:
+        if pd.notna(row[col]) and pd.to_numeric(row[col], errors='coerce') > 0:
+            raw_name = col.replace('Type of tree/', '')
+            clean_name = re.split(r'[\(\u0600-\u06FF]', raw_name)[0].strip()
+            if clean_name: species_list.append(clean_name.title())
+    return ", ".join(species_list) if species_list else "Mixed/Other"
 df_geo['Species_Selection'] = df_geo.apply(get_row_species, axis=1)
 
 # Ensure Beneficiary Names are strings for matching
@@ -96,27 +95,27 @@ response = requests.get(url)
 
 kml_placemarks = []
 if response.status_code == 200:
-root = ET.fromstring(response.content)
-for elem in root.iter():
-if '}' in elem.tag:
-elem.tag = elem.tag.split('}', 1)[1]
-
-placemarks = root.findall('.//Placemark')
-
-for pm in placemarks:
-name_node = pm.find('name')
-point_node = pm.find('.//Point/coordinates')
-
-if name_node is not None and point_node is not None:
-raw_name = name_node.text.strip() if name_node.text else "Unknown"
-coords = point_node.text.strip().split(',')
-if len(coords) >= 2:
-lon, lat = float(coords[0]), float(coords[1])
-kml_placemarks.append({'name': raw_name, 'lat': lat, 'lon': lon})
-
-print(f"Successfully extracted {len(kml_placemarks)} locations directly from the map.")
+    root = ET.fromstring(response.content)
+    for elem in root.iter():
+        if '}' in elem.tag:
+            elem.tag = elem.tag.split('}', 1)[1]
+            
+    placemarks = root.findall('.//Placemark')
+    
+    for pm in placemarks:
+        name_node = pm.find('name')
+        point_node = pm.find('.//Point/coordinates')
+        
+        if name_node is not None and point_node is not None:
+            raw_name = name_node.text.strip() if name_node.text else "Unknown"
+            coords = point_node.text.strip().split(',')
+            if len(coords) >= 2:
+                lon, lat = float(coords[0]), float(coords[1])
+                kml_placemarks.append({'name': raw_name, 'lat': lat, 'lon': lon})
+                
+    print(f"Successfully extracted {len(kml_placemarks)} locations directly from the map.")
 else:
-print("Failed to download KML map data. Check your internet connection.")
+    print("Failed to download KML map data. Check your internet connection.")
 
 # ==========================================
 # 4. BUILD INTERACTIVE MAP
@@ -129,41 +128,41 @@ marker_cluster = MarkerCluster().add_to(m)
 matched_count = 0
 
 for pm in kml_placemarks:
-kml_name = pm['name']
-match = df_geo[df_geo['beneficial person name'].apply(lambda x: x in kml_name or kml_name in x)]
-
-if not match.empty:
-row = match.iloc[0]
-phone = row['Phone_Clean']
-trees = int(row[tree_col])
-species = row['Species_Selection']
-leader = row['Leader_Clean']
-b_name = row['beneficial person name']
-matched_count += 1
-else:
-phone = "Not Provided"
-trees = 0
-species = "Unknown"
-leader = "Unknown"
-b_name = kml_name
-
-popup_html = f"""
-<div style='width: 270px; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6;'>
-    <h3 style='color: #1B5E20; margin-top: 0; margin-bottom: 8px; font-size: 15px;'>✔ Site Intervention Verified</h3>
-    <hr style='border: 0; border-top: 1px solid #EEEEEE; margin-bottom: 10px;' />
-    <b>Beneficiary Name:</b> <span dir='rtl' style='font-size: 14px;'>{b_name}</span><br />
-    <b>Contact Phone:</b> {phone}<br />
-    <b>Total Trees Planted:</b> <b>{trees}</b><br />
-    <b>Species Selection:</b> {species}<br />
-    <b>Supervising Team Leader:</b> {leader}<br />
-</div>
-"""
-
-folium.Marker(
-location=[pm['lat'], pm['lon']],
-popup=folium.Popup(popup_html, max_width=320),
-icon=folium.Icon(color='green', icon='leaf')
-).add_to(marker_cluster)
+    kml_name = pm['name']
+    match = df_geo[df_geo['beneficial person name'].apply(lambda x: x in kml_name or kml_name in x)]
+    
+    if not match.empty:
+        row = match.iloc[0]
+        phone = row['Phone_Clean']
+        trees = int(row[tree_col])
+        species = row['Species_Selection']
+        leader = row['Leader_Clean']
+        b_name = row['beneficial person name']
+        matched_count += 1
+    else:
+        phone = "Not Provided"
+        trees = 0
+        species = "Unknown"
+        leader = "Unknown"
+        b_name = kml_name
+        
+    popup_html = f"""
+    <div style='width: 270px; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6;'>
+        <h3 style='color: #1B5E20; margin-top: 0; margin-bottom: 8px; font-size: 15px;'>✔ Site Intervention Verified</h3>
+        <hr style='border: 0; border-top: 1px solid #EEEEEE; margin-bottom: 10px;'/>
+        <b>Beneficiary Name:</b> <span dir='rtl' style='font-size: 14px;'>{b_name}</span><br/>
+        <b>Contact Phone:</b> {phone}<br/>
+        <b>Total Trees Planted:</b> <b>{trees}</b><br/>
+        <b>Species Selection:</b> {species}<br/>
+        <b>Supervising Team Leader:</b> {leader}<br/>
+    </div>
+    """
+    
+    folium.Marker(
+        location=[pm['lat'], pm['lon']],
+        popup=folium.Popup(popup_html, max_width=320),
+        icon=folium.Icon(color='green', icon='leaf')
+    ).add_to(marker_cluster)
 
 print(f"Matched {matched_count} points to Excel data successfully!")
 
@@ -173,36 +172,33 @@ leader_items_html = ""
 verified_top_leaders_trees = 0
 
 for leader in allowed_leaders:
-count = int(leader_stats_geo.get(leader, 0))
-verified_top_leaders_trees += count
-leader_items_html += f"<li style='margin-bottom: 6px;'>{leader}: <b>{count:,}</b> trees (Verified)</li>"
+    count = int(leader_stats_geo.get(leader, 0))
+    verified_top_leaders_trees += count
+    leader_items_html += f"<li style='margin-bottom: 6px;'>{leader}: <b>{count:,}</b> trees (Verified)</li>"
 
 # Calculate remaining trees assigned to third party
 remaining_trees = total_trees_logistics - verified_top_leaders_trees
 if remaining_trees > 0:
-leader_items_html += f"<li style='margin-bottom: 6px;'>Third Party Implementers: <b>{remaining_trees:,}</b> trees
-    (Verified)</li>"
+    leader_items_html += f"<li style='margin-bottom: 6px;'>Third Party Implementers: <b>{remaining_trees:,}</b> trees (Verified)</li>"
 
-species_items_html = "".join([f"<li style='margin-bottom: 6px;'>{k}: <b>{int(v):,}</b> trees</li>" for k, v in
-species_stats_logistics.items()])
+species_items_html = "".join([f"<li style='margin-bottom: 6px;'>{k}: <b>{int(v):,}</b> trees</li>" for k, v in species_stats_logistics.items()])
 
 dashboard_html = f'''
 <div style="position: fixed; top: 20px; right: 20px; width: 350px; max-height: 85vh; overflow-y: auto;
      background-color: white; border: 1px solid #e0e0e0; z-index:9999; font-family: Arial; padding: 20px;
      border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); font-size: 14px;" dir="ltr">
-    <h2 style="margin-top:0; color:#1B5E20; border-bottom: 2px solid #1B5E20; padding-bottom: 12px;">Yak Dar Tree
-        plantation Report</h2>
-    <h3 style="color: #424242;">Logistics Summary</h3>
-    <p><b>Total Trees Dispatched:</b> {total_trees_logistics:,}</p>
-    <p><b>Initial Phase:</b> 1,425 trees</p>
-    <hr>
-    <h3 style="color: #424242;">Dispatched Species</h3>
-    <ul style="padding-left: 20px;">{species_items_html}</ul>
-    <hr>
-    <h3 style="color: #424242;">Field Performance</h3>
-    <ul style="padding-left: 20px;">{leader_items_html}</ul>
+     <h2 style="margin-top:0; color:#1B5E20; border-bottom: 2px solid #1B5E20; padding-bottom: 12px;">Yak Dar Tree plantation Report</h2>
+     <h3 style="color: #424242;">Logistics Summary</h3>
+     <p><b>Total Trees Dispatched:</b> {total_trees_logistics:,}</p>
+     <p><b>Initial Phase:</b> 1,425 trees</p>
+     <hr>
+     <h3 style="color: #424242;">Dispatched Species</h3>
+     <ul style="padding-left: 20px;">{species_items_html}</ul>
+     <hr>
+     <h3 style="color: #424242;">Field Performance</h3>
+     <ul style="padding-left: 20px;">{leader_items_html}</ul>
 </div>
 '''
 m.get_root().html.add_child(folium.Element(dashboard_html))
 m.save('jeer_donor_report.html')
-print("-> SUCCESS! Report generated and saved as 'Donor_report.html'.")
+print("-> SUCCESS! Report generated and saved as 'jeer_donor_report.html'.")
